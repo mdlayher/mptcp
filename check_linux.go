@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -29,6 +30,26 @@ var checkMPTCP = func(host string, port uint16) (bool, error) {
 
 	// Use lookup function to check for results
 	return lookupMPTCPLinux(hexHostPort)
+}
+
+// mptcpEnabled uses the Linux /proc filesystem to determine if
+// the current host supports MPTCP.
+var mptcpEnabled = func() (bool, error) {
+	// Check for presence of MPTCP connections table
+	_, err := os.Stat(procMPTCP)
+	if err == nil {
+		// MPTCP capable
+		return true, nil
+	}
+
+	// If table does not exist, return false, but do not return
+	// the accompanying error
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	// Return any other error
+	return false, err
 }
 
 // hostToHex converts an input host IP address into its equivalent hex form,

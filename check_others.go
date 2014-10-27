@@ -6,3 +6,8 @@ package mptcp
 var checkMPTCP = func(host string, port uint16) (bool, error) {
 	return false, ErrNotImplemented
 }
+
+// mptcpEnabled always returns false unless explicitly supported by a platform.
+var mptcpEnabled = func() (bool, error) {
+	return false, nil
+}

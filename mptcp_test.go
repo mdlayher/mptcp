@@ -37,6 +37,25 @@ var hostPorts = map[string]uint16{
 	ipv6HostTwo: 4040,
 }
 
+// TestEnabled verifies that Enabled returns the same result as its
+// underlying implementation.
+func TestEnabled(t *testing.T) {
+	// Check function result immediately
+	enabled, err := mptcpEnabled()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	enabled2, err := Enabled()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if enabled != enabled2 {
+		t.Fatal("mismatch result between Enabled and underlying mptcpEnabled")
+	}
+}
+
 // TestIsMPTCP tests the functionality of IsMPTCP, using a mock lookup
 // table, which mocks the true operating system interface.
 func TestIsMPTCP(t *testing.T) {

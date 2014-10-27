@@ -24,6 +24,15 @@ func init() {
 func main() {
 	log.SetPrefix("mptcphttp: ")
 
+	// Check for multipath capabilities
+	ok, err := mptcp.Enabled()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !ok {
+		log.Fatal("multipath TCP is not enabled, exiting now")
+	}
+
 	// Parse flags
 	flag.Parse()
 

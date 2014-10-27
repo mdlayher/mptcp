@@ -25,6 +25,17 @@ var (
 	ErrNotImplemented = errors.New("not implemented")
 )
 
+// Enabled returns whether or the current host supports multipath TCP.
+// If multipath TCP is enabled on this host, this function will return true.
+// If it is not enabled on this host, or an error occurs, this function will
+// return false.
+//
+// It is recommended to check the result of Enabled before attempting to check
+// for active multipath TCP connections using IsMPTCP.
+func Enabled() (bool, error) {
+	return mptcpEnabled()
+}
+
 // IsMPTCP detects if there is an active multipath TCP connection to this machine,
 // originating from the input IP address and port pair.  This functionality
 // is operating-system dependent, and may not be implemented on all platforms.

@@ -5,6 +5,7 @@ package mptcp
 import (
 	"log"
 	"net"
+	"os"
 	"strings"
 	"testing"
 )
@@ -12,6 +13,37 @@ import (
 // Swap in mock MPTCP lookup function for tests
 func init() {
 	lookupMPTCPLinux = generateMockLookupMPTCPLinux()
+}
+
+// TestLinux_mptcpEnabled verifies that mptcpEnabled properly detects
+// multipath TCP functionality on the current Linux system.
+func TestLinux_mptcpEnabled(t *testing.T) {
+	// Check function result immediately
+	enabled, err := mptcpEnabled()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Check if multipath TCP is available by checking for
+	// connections table
+	_, err = os.Stat(procMPTCP)
+	if os.IsNotExist(err) {
+		if enabled {
+			t.Fatalf("could not find %s, but mptcpEnabled returned true", procMPTCP)
+		}
+
+		return
+	}
+
+	// Fatal on other errors
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify multipath TCP is enabled
+	if !enabled {
+		t.Fatalf("found %s, but mptcpEnabled returned false", procMPTCP)
+	}
 }
 
 // TestLinux_hostToHex verifies that hostToHex generates the proper hex

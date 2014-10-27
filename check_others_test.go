@@ -12,3 +12,12 @@ func TestOthers_checkMPTCP(t *testing.T) {
 		t.Fatalf("checkMPTCP is not implemented, but returned: (%v, %v)", ok, err)
 	}
 }
+
+// TestOthers_mptcpEnabled verifies that mptcpEnabled always returns
+// false unless a platform explicitly supports it.
+func TestOthers_mptcpEnabled(t *testing.T) {
+	ok, err := mptcpEnabled()
+	if ok || err != nil {
+		t.Fatalf("mptcpEnabled should return (false, nil), but returned: (%v, %v)", ok, err)
+	}
+}

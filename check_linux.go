@@ -97,8 +97,15 @@ var lookupMPTCPLinux = func(hexHostPort string) (bool, error) {
 	}
 	defer mptcpFile.Close()
 
+	// Read from input stream
+	return mptcpTableReaderLinux(mptcpFile, hexHostPort)
+}
+
+// mptcpTableReaderLinux reads a MPTCP connections table from an input stream.
+// This function allows easier testability with table parsing.
+func mptcpTableReaderLinux(r io.Reader, hexHostPort string) (bool, error) {
 	// Open text scanner to split lines, skip header line
-	scanner := bufio.NewScanner(mptcpFile)
+	scanner := bufio.NewScanner(r)
 	scanner.Split(bufio.ScanLines)
 	if !scanner.Scan() {
 		// If file was empty, return unexpected EOF

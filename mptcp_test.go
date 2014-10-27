@@ -37,22 +37,22 @@ var hostPorts = map[string]uint16{
 	ipv6HostTwo: 4040,
 }
 
-// TestEnabled verifies that Enabled returns the same result as its
+// TestIsEnabled verifies that IsEnabled returns the same result as its
 // underlying implementation.
-func TestEnabled(t *testing.T) {
+func TestIsEnabled(t *testing.T) {
 	// Check function result immediately
 	enabled, err := mptcpEnabled()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	enabled2, err := Enabled()
+	enabled2, err := IsEnabled()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if enabled != enabled2 {
-		t.Fatal("mismatch result between Enabled and underlying mptcpEnabled")
+		t.Fatal("mismatch result between IsEnabled and underlying mptcpEnabled")
 	}
 }
 

@@ -3,10 +3,10 @@
 package mptcp
 
 import (
-	"bytes"
+	"bufio"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -90,14 +90,55 @@ func u16PortToHex(port uint16) string {
 //
 // This implementation is swappable for testing with a mock data source.
 var lookupMPTCPLinux = func(hexHostPort string) (bool, error) {
-	// Read in the entire MPTCP connections table
-	// TODO(mdlayher): consider using a more efficient method (bufio.NewScanner)
-	mptcpBuf, err := ioutil.ReadFile(procMPTCP)
+	// Open Linux MPTCP table
+	mptcpFile, err := os.Open(procMPTCP)
 	if err != nil {
 		return false, err
 	}
+	defer mptcpFile.Close()
 
-	// Check if the combined host:port pair are present in the MPTCP
-	// connections table
-	return bytes.Contains(mptcpBuf, []byte(hexHostPort)), nil
+	// Open text scanner to split lines, skip header line
+	scanner := bufio.NewScanner(mptcpFile)
+	scanner.Split(bufio.ScanLines)
+	if !scanner.Scan() {
+		// If file was empty, return unexpected EOF
+		return false, io.ErrUnexpectedEOF
+	}
+
+	// Iterate until EOF or entry found
+	for scanner.Scan() {
+		// Scan fields into mptcpTableEntry
+		mptcpEntry := newMPTCPTableEntry(strings.Fields(scanner.Text()))
+
+		// Check for remote address which matches input
+		if mptcpEntry.RemoteAddr == hexHostPort {
+			return true, nil
+		}
+	}
+
+	// No result found
+	return false, nil
+}
+
+// mptcpTableEntry contains parsed information from a Linux MPTCP connections
+// table entry.
+type mptcpTableEntry struct {
+	IsIPv6     bool
+	LocalAddr  string
+	RemoteAddr string
+}
+
+// newMPTCPTableEntry creates a new mptcpTableEntry from a slice of strings.
+func newMPTCPTableEntry(fields []string) *mptcpTableEntry {
+	// Check for IPv6 connectivity
+	m := &mptcpTableEntry{}
+	if fields[3] == "1" {
+		m.IsIPv6 = true
+	}
+
+	// Scan hex encoded local and remote addresses
+	m.LocalAddr = fields[4]
+	m.RemoteAddr = fields[5]
+
+	return m
 }

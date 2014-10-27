@@ -3,7 +3,6 @@
 package mptcp
 
 import (
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -134,8 +133,6 @@ func generateMockLookupMPTCPLinux() func(string) (bool, error) {
 		// Generate table key with host and port in hex
 		key := strings.ToUpper(net.JoinHostPort(hexHost, u16PortToHex(port)))
 		lookupSet[key] = struct{}{}
-
-		log.Printf("mock: %s:%d -> %s", host, port, key)
 	}
 
 	// Return function which does lookups with mock data

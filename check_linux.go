@@ -5,6 +5,7 @@ package mptcp
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -12,9 +13,21 @@ import (
 	"strings"
 )
 
-// procMPTCP is the location of the Linux-specific file which contains
-// the active MPTCP connections table.
-const procMPTCP = "/proc/net/mptcp"
+const (
+	// procMPTCP is the location of the Linux-specific file which contains
+	// the active MPTCP connections table.
+	procMPTCP = "/proc/net/mptcp"
+
+	// mptcpTableColumns is the number of columns in a valid Linux MPTCP
+	// connections table.
+	mptcpTableColumns = 11
+)
+
+var (
+	// errInvalidMPTCPEntry is returned when an input MPTCP connection
+	// entry is not in the expected format.
+	errInvalidMPTCPEntry = errors.New("invalid MPTCP connection entry")
+)
 
 // checkMPTCP checks if an input host string and uint16 port are present
 // in this Linux machine's MPTCP active connections.
@@ -115,7 +128,10 @@ func mptcpTableReaderLinux(r io.Reader, hexHostPort string) (bool, error) {
 	// Iterate until EOF or entry found
 	for scanner.Scan() {
 		// Scan fields into mptcpTableEntry
-		mptcpEntry := newMPTCPTableEntry(strings.Fields(scanner.Text()))
+		mptcpEntry, err := newMPTCPTableEntry(strings.Fields(scanner.Text()))
+		if err != nil {
+			return false, err
+		}
 
 		// Check for remote address which matches input
 		if mptcpEntry.RemoteAddr == hexHostPort {
@@ -128,24 +144,29 @@ func mptcpTableReaderLinux(r io.Reader, hexHostPort string) (bool, error) {
 }
 
 // mptcpTableEntry contains parsed information from a Linux MPTCP connections
-// table entry.
+// table entry.  While numerous fields are available, we only make use of
+// a couple of them.
 type mptcpTableEntry struct {
 	IsIPv6     bool
-	LocalAddr  string
 	RemoteAddr string
 }
 
 // newMPTCPTableEntry creates a new mptcpTableEntry from a slice of strings.
-func newMPTCPTableEntry(fields []string) *mptcpTableEntry {
+func newMPTCPTableEntry(fields []string) (*mptcpTableEntry, error) {
+	// Check for proper number of fields, though most of them will not be
+	// kept for this library's purposes.
+	if len(fields) != mptcpTableColumns {
+		return nil, errInvalidMPTCPEntry
+	}
+
 	// Check for IPv6 connectivity
 	m := &mptcpTableEntry{}
 	if fields[3] == "1" {
 		m.IsIPv6 = true
 	}
 
-	// Scan hex encoded local and remote addresses
-	m.LocalAddr = fields[4]
+	// Scan hex encoded remote address
 	m.RemoteAddr = fields[5]
 
-	return m
+	return m, nil
 }

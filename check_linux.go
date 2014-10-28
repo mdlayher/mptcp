@@ -4,6 +4,7 @@ package mptcp
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -20,13 +21,22 @@ const (
 
 	// mptcpTableColumns is the number of columns in a valid Linux MPTCP
 	// connections table.
-	mptcpTableColumns = 11
+	mptcpTableColumns = 10
+)
+
+var (
+	// mptcpTableHeader is the header from the top of a MPTCP connections table.
+	mptcpTableHeader = []byte(`  sl  loc_tok  rem_tok  v6 local_address                         remote_address                        st ns tx_queue rx_queue inode`)
 )
 
 var (
 	// errInvalidMPTCPEntry is returned when an input MPTCP connection
 	// entry is not in the expected format.
 	errInvalidMPTCPEntry = errors.New("invalid MPTCP connection entry")
+
+	// errInvalidMPTCPTable is returned when an input MPTCP connection
+	// table is not in the expected format.
+	errInvalidMPTCPTable = errors.New("invalid MPTCP connections table")
 )
 
 // checkMPTCP checks if an input host string and uint16 port are present
@@ -123,6 +133,11 @@ func mptcpTableReaderLinux(r io.Reader, hexHostPort string) (bool, error) {
 	if !scanner.Scan() {
 		// If file was empty, return unexpected EOF
 		return false, io.ErrUnexpectedEOF
+	}
+
+	// Ensure first line was valid MPTCP connections table header
+	if !bytes.Equal(scanner.Bytes(), mptcpTableHeader) {
+		return false, errInvalidMPTCPTable
 	}
 
 	// Iterate until EOF or entry found

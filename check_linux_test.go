@@ -3,10 +3,18 @@
 package mptcp
 
 import (
+	"bytes"
+	"io"
 	"net"
 	"os"
 	"strings"
 	"testing"
+)
+
+var (
+	// Entries taken from a real MPTCP connections table, used for testing
+	testIPv4MPTCPEntry = []byte(" 1: 9C290BF6 4CC0A727  0 E70E8368:0016                         1134B018:BBE8                         01 01 00000000:00000000 15666")
+	testIPv6MPTCPEntry = []byte(" 0: F6635734 353F1E98  1 80A80426100000080000000001C07400:1F90 80A80426100000080000000001208902:93A5 01 01 00000000:00000000 39893")
 )
 
 // Swap in mock MPTCP lookup function for tests
@@ -110,6 +118,54 @@ func TestLinux_u16PortToHex(t *testing.T) {
 		// Convert port to hex representation, check results
 		if hexPort := u16PortToHex(test.port); hexPort != test.hexPort {
 			t.Fatalf("[%02d] unexpected hexPort: %v != %v [test: %v]", i, hexPort, test.hexPort, test)
+		}
+	}
+}
+
+// TestLinux_mptcpTableReaderLinux verifies that mptcpTableReaderLinux can properly
+// parse a Linux MPTCP connections table for entries.
+func TestLinux_mptcpTableReaderLinux(t *testing.T) {
+	var tests = []struct {
+		lines [][]byte
+		entry string
+		ok    bool
+		err   error
+	}{
+		// Empty file
+		{nil, "", false, io.ErrUnexpectedEOF},
+		// Invalid header
+		{[][]byte{[]byte("foobar")}, "", false, errInvalidMPTCPTable},
+		// Header only, no entries
+		{[][]byte{mptcpTableHeader}, "", false, nil},
+		// Header, bad entry
+		{[][]byte{mptcpTableHeader, []byte("foobar")}, "", false, errInvalidMPTCPEntry},
+		// Header, not found IPv4 entry
+		{[][]byte{mptcpTableHeader, testIPv4MPTCPEntry}, "1134B018:FFFF", false, nil},
+		// Header, good IPv4 entry
+		{[][]byte{mptcpTableHeader, testIPv4MPTCPEntry}, "1134B018:BBE8", true, nil},
+		// Header, good IPv6 entry
+		{[][]byte{mptcpTableHeader, testIPv6MPTCPEntry}, "80A80426100000080000000001208902:FFFF", false, nil},
+		// Header, good IPv6 entry
+		{[][]byte{mptcpTableHeader, testIPv6MPTCPEntry}, "80A80426100000080000000001208902:93A5", true, nil},
+	}
+
+	for i, test := range tests {
+		// Store input lines in a buffer, appending each with newline
+		buf := bytes.NewBuffer(nil)
+		for _, l := range test.lines {
+			if _, err := buf.Write(append(l, '\n')); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Attempt to check MPTCP table for entry
+		ok, err := mptcpTableReaderLinux(buf, test.entry)
+		if err != test.err {
+			t.Fatalf("[%02d] unexpected err: %v != %v [test: %v]", i, err, test.err, test)
+		}
+
+		if ok != test.ok {
+			t.Fatalf("[%02d] unexpected ok: %v != %v [test: %v]", i, ok, test.ok, test)
 		}
 	}
 }

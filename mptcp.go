@@ -31,31 +31,27 @@ var (
 // return false.
 //
 // It is recommended to check the result of IsEnabled before attempting to check
-// for active multipath TCP connections using IsMPTCP.
+// for active multipath TCP connections using Check.
 func IsEnabled() (bool, error) {
 	return mptcpEnabled()
 }
 
-// IsMPTCP detects if there is an active multipath TCP connection to this machine,
-// originating from the input IP address and port pair.  This functionality
-// is operating-system dependent, and may not be implemented on all platforms.
-// It is recommended to check the result of IsEnabled before attempting to check
-// for active multipath TCP connections using IsMPTCP.
+// Check detects if there is an active multipath TCP connection to this machine,
+// originating from the input host:port string, such as one returned from the
+// RemoteAddr method of a net.Conn.
 //
-// If multipath TCP detection is not implemented on the current operating system,
+// This functionality is operating-system dependent, and may not be implemented
+// on all platforms. It is recommended to check the result of IsEnabled before
+// attempting to check for active multipath TCP connections using Check.
+//
+// If multipath TCP detection is not implemented for the current operating system,
 // this function will return ErrNotImplemented.  In addition, other errors may be
 // returned on a failed detection.
 //
 // If multipath TCP detection is implemented on the current operating system,
-// this function will return true or false, depending on if the input client host
-// and port are using multipath TCP.
-func IsMPTCP(host string, port uint16) (bool, error) {
-	return checkMPTCP(host, port)
-}
-
-// IsMPTCPHostPort behaves like IsMPTCP, but accepts an input host:port string pair,
-// as would typically be provided by the RemoteAddr method of a net.Conn.
-func IsMPTCPHostPort(hostport string) (bool, error) {
+// this function will return true or false, depending on if a connection with
+// the input host:port string is active and is using multipath TCP.
+func Check(hostport string) (bool, error) {
 	// Split input hostport pair
 	host, port, err := net.SplitHostPort(hostport)
 	if err != nil {
@@ -69,5 +65,5 @@ func IsMPTCPHostPort(hostport string) (bool, error) {
 	}
 
 	// Check for multipath TCP connectivity
-	return IsMPTCP(host, uint16(uPort))
+	return checkMPTCP(host, uint16(uPort))
 }

@@ -40,7 +40,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Check if HTTP request is being issued from a client which is
 		// connected using multipath TCP
-		ok, err := mptcp.IsMPTCPHostPort(r.RemoteAddr)
+		ok, err := mptcp.Check(r.RemoteAddr)
 		if err != nil {
 			log.Println("error:", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -56,9 +56,9 @@ func TestIsEnabled(t *testing.T) {
 	}
 }
 
-// TestIsMPTCP tests the functionality of IsMPTCP, using a mock lookup
+// TestCheck tests the functionality of Check, using a mock lookup
 // table, which mocks the true operating system interface.
-func TestIsMPTCP(t *testing.T) {
+func TestCheck(t *testing.T) {
 	var tests = []struct {
 		host string
 		port uint16
@@ -108,7 +108,9 @@ func TestIsMPTCP(t *testing.T) {
 
 	for i, test := range tests {
 		// Test using expected input, check for expected results
-		ok, err := IsMPTCP(test.host, test.port)
+		// Host and port test values are joined here to avoid lots
+		// of aggravating formatting on the above test table values
+		ok, err := Check(net.JoinHostPort(test.host, strconv.FormatUint(uint64(test.port), 10)))
 		if err != test.err {
 			t.Fatalf("[%02d] unexpected err: %v != %v [test: %v]", i, err, test.err, test)
 		}
@@ -119,9 +121,9 @@ func TestIsMPTCP(t *testing.T) {
 	}
 }
 
-// TestIsMPTCPHostPort verifies that IsMPTCPHostPort properly splits a hostport
+// TestCheckSplitHostPort verifies that Check properly splits a hostport
 // string, and returns the proper results.
-func TestIsMPTCPHostPort(t *testing.T) {
+func TestCheckSplitHostPort(t *testing.T) {
 	var tests = []struct {
 		hostport string
 		ok       bool
@@ -139,7 +141,7 @@ func TestIsMPTCPHostPort(t *testing.T) {
 
 	for i, test := range tests {
 		// Test using expected input, check for expected results
-		ok, err := IsMPTCPHostPort(test.hostport)
+		ok, err := Check(test.hostport)
 		if err != nil {
 			// Check for network address error
 			if aErr, ok := err.(*net.AddrError); ok {

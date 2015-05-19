@@ -25,7 +25,7 @@ func main() {
 	log.SetPrefix("mptcphttp: ")
 
 	// Check for multipath capabilities
-	ok, err := mptcp.IsEnabled()
+	ok, err := mptcp.Enabled()
 	if err != nil {
 		log.Fatal(err)
 	}

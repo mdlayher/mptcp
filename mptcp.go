@@ -25,14 +25,14 @@ var (
 	ErrNotImplemented = errors.New("not implemented")
 )
 
-// IsEnabled returns whether or the current host supports multipath TCP.
+// Enabled returns whether or the current host supports multipath TCP.
 // If multipath TCP is enabled on this host, this function will return true.
 // If it is not enabled on this host, or an error occurs, this function will
 // return false.
 //
-// It is recommended to check the result of IsEnabled before attempting to check
+// It is recommended to check the result of Enabled before attempting to check
 // for active multipath TCP connections using Check.
-func IsEnabled() (bool, error) {
+func Enabled() (bool, error) {
 	return mptcpEnabled()
 }
 
@@ -41,7 +41,7 @@ func IsEnabled() (bool, error) {
 // RemoteAddr method of a net.Conn.
 //
 // This functionality is operating-system dependent, and may not be implemented
-// on all platforms. It is recommended to check the result of IsEnabled before
+// on all platforms. It is recommended to check the result of Enabled before
 // attempting to check for active multipath TCP connections using Check.
 //
 // If multipath TCP detection is not implemented for the current operating system,
